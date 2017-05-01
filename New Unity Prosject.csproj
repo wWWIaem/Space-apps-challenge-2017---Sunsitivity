@@ -1,0 +1,83 @@
+﻿using UnityEngine;
+using System.Collections;
+using System.Threading;
+using UnityEngine.Networking;
+using UnityEngine.UI;
+using System.Net;
+using System;
+using System.IO;
+using 
+
+public class LectorJSON
+{
+    private JsonData jd;
+
+    /**
+     * Se carga el archivo json para su posterior uso
+     * Dependiendo de si se está usando el editor o Android se desarrolla el path
+     */
+    public LectorJSON() { jd = new JsonData(); }
+    public void ConvertirJSON(string json) { jd = JsonMapper.ToObject(json); }
+    public void LeerJSON(string nombre) { jd = JsonMapper.ToObject(File.ReadAllText(Constantes.Instance.path + nombre))}
+    public string ObtenerDato(string nodo, string variable) { return jd[nodo][variable].ToString(); }
+    public string ObtenerDato(string nodo, int indice) { return jd[nodo][indice].ToString(); }
+
+    public string ObtenerDato(int nodo, string indice)
+    {
+        return jd[nodo][indice].ToString();
+    }
+
+    public int getNodos(int profundidad)
+    {
+        switch (profundidad)
+        {
+            case 0: return jd.Count;
+            case 1: return jd[0].Count;
+            case 2: return jd[1].Count;
+            case 3: return jd[2].Count;
+            case 4: return jd[3].Count;
+            default: return 0;
+        }
+    }
+
+    public void GuardarJSON(string nombre)
+    {
+        File.WriteAllText(Constantes.Instance.path + nombre, jd.ToJson().ToString());
+        Debug.Log("Archivo guardado en:" + Constantes.Instance.path + nombre);
+    }
+}
+
+public class ControlREST : MonoBehaviour
+{
+    public static string urlNotificacion = null;
+
+    private string host = "http://"; //localhost:8081/";
+    private string servidor;
+    private LectorJSON lectorJSON;
+    private WebClient client;
+    private ControlUI cu;
+    private string respuesta;
+
+    public void getJSON(){
+
+
+        string s;
+        string URL_= "https://uvimate.herokuapp.com/api/getUVI/" + lat + "/" + lon;
+        client = new WebClient();
+        s = client.DownloadString(URL_);
+        lectorJSON.ConvertirJSON(s);
+        lectorJSON.GuardarJSON("pipi.txt");
+       
+        ReiniciarListener();
+    }
+
+    public void ReiniciarListener()
+    {
+        Listener listenerNotMovimiento = new Listener(host);
+        Thread oThread = new Thread(new ThreadStart(listenerNotMovimiento.PrepararListener));
+
+        oThread.Start();
+        Thread.Sleep(1);
+        Debug.Log("Thread iniciado para url:" + host);
+    }
+}
